@@ -1,0 +1,161 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang libclang-dev linux-libc-dev musl-tools musl-dev
+
+      - name: Install Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup component add rustfmt clippy
+
+      - name: Format
+        run: cargo fmt --check
+
+      - name: Clippy
+        run: cargo clippy -- -D warnings
+
+      - name: Test
+        run: cargo test
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+
+      - name: Audit dependencies
+        run: cargo audit
+
+  build-linux:
+    name: Build Linux ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    needs: check
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang libclang-dev linux-libc-dev musl-tools musl-dev
+
+      - name: Install Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup target add ${{ matrix.target }}
+
+      - name: Build release binary
+        env:
+          CC_x86_64_unknown_linux_musl: musl-gcc
+          CC_aarch64_unknown_linux_musl: musl-gcc
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package release asset
+        run: |
+          mkdir -p dist
+          install -m 0755 target/${{ matrix.target }}/release/nporter dist/nporter
+          install -m 0755 install.sh dist/install.sh
+          install -d -m 0755 dist/systemd
+          install -m 0644 systemd/nporter.service dist/systemd/nporter.service
+          ./dist/nporter --version
+          tar -C dist -czf dist/nporter-linux-${{ matrix.arch }}.tar.gz nporter install.sh systemd/nporter.service
+          cd dist
+          sha256sum nporter-linux-${{ matrix.arch }}.tar.gz > nporter-linux-${{ matrix.arch }}.tar.gz.sha256
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: nporter-linux-${{ matrix.arch }}
+          path: |
+            dist/nporter-linux-${{ matrix.arch }}.tar.gz
+            dist/nporter-linux-${{ matrix.arch }}.tar.gz.sha256
+          if-no-files-found: error
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: build-linux
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Verify tag matches CLI version
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          cli_version="$(sed -n 's/^pub const VERSION: &str = "\(.*\)";$/\1/p' src/cli.rs)"
+          if [ "$tag_version" != "$cli_version" ]; then
+            echo "tag version ($tag_version) does not match CLI version ($cli_version)" >&2
+            exit 1
+          fi
+
+      - name: Download amd64 release artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: nporter-linux-amd64
+          path: dist
+
+      - name: Download arm64 release artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: nporter-linux-arm64
+          path: dist
+
+      - name: Verify release asset
+        run: |
+          cd dist
+          sha256sum -c nporter-linux-amd64.tar.gz.sha256
+          sha256sum -c nporter-linux-arm64.tar.gz.sha256
+          tar -tzf nporter-linux-amd64.tar.gz
+          tar -tzf nporter-linux-arm64.tar.gz
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          assets=(
+            dist/nporter-linux-amd64.tar.gz
+            dist/nporter-linux-amd64.tar.gz.sha256
+            dist/nporter-linux-arm64.tar.gz
+            dist/nporter-linux-arm64.tar.gz.sha256
+          )
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" \
+              --title "NPorter $GITHUB_REF_NAME" \
+              --notes "Automated release for $GITHUB_REF_NAME."
+            gh release upload "$GITHUB_REF_NAME" "${assets[@]}" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "${assets[@]}" \
+              --title "NPorter $GITHUB_REF_NAME" \
+              --notes "Automated release for $GITHUB_REF_NAME."
+          fi

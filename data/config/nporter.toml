@@ -1,0 +1,24 @@
+# NPorter sample configuration (TOML).
+# Real deployments live at /etc/nporter/nporter.toml.
+
+[nftables]
+family = "inet"            # inet = dual-stack (IPv4 + IPv6); also: ip, ip6
+table_name = "nporter"
+enable_ip_forward = true   # toggles net.ipv4.ip_forward / ipv6 forwarding on apply
+default_masquerade = true  # default for newly added mappings (per-mapping wins)
+
+[prometheus]
+enabled = false            # exposes nporter_up + nporter_mappings_configured (liveness)
+listen_address = "127.0.0.1:9090"
+path = "/metrics"
+
+[[mappings]]
+id = "example-web"
+name = "Example web service"
+protocol = "tcp"
+listen_ip = "127.0.0.1"
+listen_port = 8080
+target_ip = "192.0.2.10"
+target_port = 80
+enabled = false
+masquerade = true

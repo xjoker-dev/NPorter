@@ -1,0 +1,17 @@
+# Build output
+/target
+/target-linux
+/target-linux-arm64
+/target-container
+/dist
+
+# Local dev runtime artifacts (config/db created when running from the repo root)
+/nporter.toml
+/nporter.db
+/nporter.db-wal
+/nporter.db-shm
+/nporter.sock
+/nporter
+
+# OS / editor
+.DS_Store

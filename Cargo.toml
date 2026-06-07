@@ -1,0 +1,36 @@
+[package]
+name = "nporter"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+description = "NPorter — nftables port-forwarding rule manager with TUI, daemon and Prometheus metrics"
+license = "MIT"
+repository = "https://github.com/xjoker-dev/NPorter"
+
+[[bin]]
+name = "nporter"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+toml = "0.9"
+anyhow = "1"
+thiserror = "2"
+prometheus = { version = "0.14", default-features = false }
+ratatui = "0.30"
+crossterm = "0.29"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+
+[target.'cfg(target_os = "linux")'.dependencies]
+rustables = "0.8"
+
+# rustables 0.8.7 double-closes its netlink socket fd under nix 0.30 (manual
+# close + OwnedFd drop), which aborts on Rust 1.95+ IO-safety checks. We vendor
+# it with a one-line fix until upstream releases one. See third_party/rustables.
+[patch.crates-io]
+rustables = { path = "third_party/rustables" }

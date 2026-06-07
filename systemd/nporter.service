@@ -1,0 +1,36 @@
+[Unit]
+Description=NPorter port-forwarding daemon
+Documentation=https://github.com/xjoker-dev/NPorter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/etc/nporter
+# Apply the desired ruleset on boot/restart (idempotent, incremental), then run
+# the resident daemon and optional Prometheus exporter.
+ExecStartPre=/etc/nporter/nporter apply
+ExecStart=/etc/nporter/nporter daemon
+Restart=on-failure
+RestartSec=3
+
+# nftables (netlink) and /proc forwarding toggles require privilege.
+# Running as root is intentional for a firewall manager.
+AmbientCapabilities=CAP_NET_ADMIN
+CapabilityBoundingSet=CAP_NET_ADMIN
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=no
+ProtectSystem=strict
+ReadWritePaths=/etc/nporter /proc/sys/net/ipv4/ip_forward /proc/sys/net/ipv6/conf/all/forwarding
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+
+[Install]
+WantedBy=multi-user.target
