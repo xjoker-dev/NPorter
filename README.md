@@ -139,7 +139,19 @@ Release binaries are statically linked. Runtime package dependencies are minimal
 - systemd is optional and only needed when installing `nporter.service`.
 - The `nft` CLI package is not required by NPorter at runtime.
 
-Download the Linux amd64 or arm64 release tarball, extract it, then run the
+**One-command install** (detects amd64 / arm64 automatically):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/xjoker-dev/NPorter/main/get.sh | sudo bash
+```
+
+To enable and start the service immediately after install:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/xjoker-dev/NPorter/main/get.sh | sudo bash -s -- --now
+```
+
+Alternatively, download the release tarball manually, extract it, and run the
 installer as root:
 
 ```bash

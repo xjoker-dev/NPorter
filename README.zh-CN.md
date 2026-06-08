@@ -128,7 +128,19 @@ release 二进制为静态链接，运行期系统包依赖很少：
 - systemd 是可选项，仅安装 `nporter.service` 时需要。
 - NPorter 运行时不需要安装 `nft` 命令行包。
 
-下载 Linux amd64 或 arm64 release tarball，解压后以 root 运行安装脚本：
+**一键安装**（自动识别 amd64 / arm64）：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/xjoker-dev/NPorter/main/get.sh | sudo bash
+```
+
+安装后立即启用并启动服务：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/xjoker-dev/NPorter/main/get.sh | sudo bash -s -- --now
+```
+
+也可手动下载 release tarball，解压后以 root 运行安装脚本：
 
 ```bash
 tar -xzf nporter-linux-amd64.tar.gz
