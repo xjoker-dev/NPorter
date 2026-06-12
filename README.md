@@ -16,6 +16,8 @@ runtime path does not shell out to the `nft` binary.
 - `inet` dual-stack support for IPv4 and IPv6 mappings in one table.
 - Incremental apply: unchanged rules are kept in place, so counters are not
   reset by every config edit.
+- Optional UFW integration reconciles NPorter-owned route allow rules for
+  enabled mappings.
 - Target probes: TCP mappings use TCP handshake RTT; UDP mappings use ICMP
   ping to the target host.
 - Optional Prometheus liveness endpoint: `nporter_up` and
@@ -40,6 +42,9 @@ family = "inet"
 table_name = "nporter"
 enable_ip_forward = true
 default_masquerade = true
+
+[ufw]
+manage = false
 
 [prometheus]
 enabled = false
@@ -138,6 +143,7 @@ Release binaries are statically linked. Runtime package dependencies are minimal
 - root privileges, or equivalent `CAP_NET_ADMIN`, for `apply` and `daemon`.
 - systemd is optional and only needed when installing `nporter.service`.
 - The `nft` CLI package is not required by NPorter at runtime.
+- UFW management is disabled by default; enabling `[ufw].manage` requires `ufw`.
 
 **One-command install** (detects amd64 / arm64 automatically):
 
@@ -189,6 +195,24 @@ Installer options:
 --now          Enable and start nporter.service.
 --no-systemd   Do not install the systemd unit.
 ```
+
+### UFW integration
+
+UFW's default `deny (routed)` policy drops forwarded traffic after DNAT. NPorter
+can reconcile the required UFW route allow rules on each `apply`:
+
+```bash
+sudo nporter --config /etc/nporter/nporter.toml config --ufw-manage true
+sudo nporter --config /etc/nporter/nporter.toml apply
+```
+
+NPorter only adds or removes route rules whose comment is `NPorter:<hash>`. It
+does not change UFW's default policy or other rules. Mappings with the same
+protocol, target IP, and target port share one UFW rule.
+
+Setting `ufw.manage` to `false` stops reconciliation but leaves existing rules.
+To clean them up, disable or delete the mappings and run `apply` while management
+is still enabled, then disable management.
 
 ## Daemon and systemd
 
@@ -281,6 +305,7 @@ q        quit
 - Manage NPorter-owned rules through NPorter. Avoid editing its generated
   rules with raw `nft` commands.
 - `apply` may enable IPv4/IPv6 forwarding when `enable_ip_forward = true`.
+- `apply` reconciles NPorter-owned UFW route allow rules when `ufw.manage = true`.
 - The systemd unit intentionally needs `CAP_NET_ADMIN`; it is sandboxed with
   a restricted capability set and read/write paths.
 - Use documentation IP ranges in examples. Do not commit real server IPs,
