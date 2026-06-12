@@ -68,6 +68,7 @@ pub struct Mapping {
 #[serde(default)]
 pub struct Config {
     pub nftables: NftablesConfig,
+    pub ufw: UfwConfig,
     pub prometheus: PrometheusConfig,
     pub mappings: Vec<Mapping>,
 }
@@ -91,6 +92,13 @@ impl Default for NftablesConfig {
             default_masquerade: true,
         }
     }
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct UfwConfig {
+    /// Reconcile UFW route allow rules for enabled mappings during apply.
+    pub manage: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

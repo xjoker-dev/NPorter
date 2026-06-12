@@ -7,6 +7,9 @@ table_name = "nporter"
 enable_ip_forward = true   # toggles net.ipv4.ip_forward / ipv6 forwarding on apply
 default_masquerade = true  # default for newly added mappings (per-mapping wins)
 
+[ufw]
+manage = false             # reconcile owned UFW route allow rules during apply
+
 [prometheus]
 enabled = false            # exposes nporter_up + nporter_mappings_configured (liveness)
 listen_address = "127.0.0.1:9090"

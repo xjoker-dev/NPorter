@@ -112,6 +112,8 @@ struct SetArgs {
 
 #[derive(clap::Args)]
 struct ConfigArgs {
+    #[arg(long = "ufw-manage")]
+    ufw_manage: Option<bool>,
     #[arg(long = "prometheus-enabled")]
     prometheus_enabled: Option<bool>,
     #[arg(long = "prometheus-listen-address")]
@@ -285,6 +287,10 @@ fn cmd_delete(path: &Path, id: &str) -> Result<()> {
 fn cmd_config(path: &Path, a: ConfigArgs) -> Result<()> {
     let mut cfg = load(path)?;
     let mut changed = false;
+    if let Some(v) = a.ufw_manage {
+        cfg.ufw.manage = v;
+        changed = true;
+    }
     if let Some(v) = a.prometheus_enabled {
         cfg.prometheus.enabled = v;
         changed = true;
@@ -300,6 +306,7 @@ fn cmd_config(path: &Path, a: ConfigArgs) -> Result<()> {
     if changed {
         config::save(path, &cfg)?;
     }
+    println!("ufw.manage={}", cfg.ufw.manage);
     println!("prometheus.enabled={}", cfg.prometheus.enabled);
     println!(
         "prometheus.listen_address={}",
@@ -315,6 +322,15 @@ fn cmd_check(path: &Path) -> Result<()> {
     let rules = crate::nft::desired_rules(&cfg)?;
     println!("config: ok");
     println!("rules: {} (buildable)", rules.len());
+    println!(
+        "ufw route rules: {} ({})",
+        crate::ufw::desired_rules(&cfg).len(),
+        if cfg.ufw.manage {
+            "managed on apply"
+        } else {
+            "management disabled"
+        }
+    );
     println!("mappings: {}", cfg.mappings.len());
     println!("note: kernel state is checked by `apply` (netlink, atomic)");
     Ok(())
@@ -329,6 +345,14 @@ fn cmd_plan(path: &Path) -> Result<()> {
     }
     println!("\n--- ruleset ---");
     print!("{}", crate::nft::render_ruleset(&cfg)?);
+    println!("\n--- ufw route rules ---");
+    if cfg.ufw.manage {
+        for rule in crate::ufw::desired_rules(&cfg) {
+            println!("+ {}", rule.display_command());
+        }
+    } else {
+        println!("management disabled");
+    }
     Ok(())
 }
 
@@ -339,6 +363,13 @@ fn cmd_apply(path: &Path) -> Result<()> {
         "apply: ok (added={}, deleted={}, kept={})",
         report.added, report.deleted, report.kept
     );
+    let ufw = crate::ufw::apply(&cfg)?;
+    if cfg.ufw.manage {
+        println!(
+            "ufw: ok (added={}, deleted={}, kept={})",
+            ufw.added, ufw.deleted, ufw.kept
+        );
+    }
     Ok(())
 }
 
@@ -346,6 +377,7 @@ fn cmd_status(path: &Path) -> Result<()> {
     let cfg = load(path)?;
     println!("mappings: {}", cfg.mappings.len());
     println!("table: {} {}", cfg.nftables.family, cfg.nftables.table_name);
+    println!("ufw management: {}", cfg.ufw.manage);
     // Live rules confirm what's actually on the kernel (reconciliation check).
     match crate::nft::observe(&cfg) {
         Ok(rules) => {

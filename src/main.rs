@@ -11,6 +11,7 @@ mod model;
 mod nft;
 mod probe;
 mod tui;
+mod ufw;
 
 fn main() {
     if let Err(e) = cli::run() {
