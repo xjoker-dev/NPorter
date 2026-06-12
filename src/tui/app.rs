@@ -7,8 +7,8 @@ use std::time::Duration;
 
 use crate::config;
 use crate::model::{Config, Mapping, Protocol};
-use crate::nft;
 use crate::probe::ProbeResult;
+use crate::{nft, ufw};
 
 /// A form field and how it is edited.
 #[derive(Clone, Copy)]
@@ -181,10 +181,24 @@ impl App {
     pub fn apply(&mut self) {
         match nft::apply(&self.cfg) {
             Ok(r) => {
-                self.status = format!(
-                    "applied (added={}, deleted={}, kept={})",
+                let mut status = format!(
+                    "applied nft (added={}, deleted={}, kept={})",
                     r.added, r.deleted, r.kept
-                )
+                );
+                match ufw::apply(&self.cfg) {
+                    Ok(u) if self.cfg.ufw.manage => {
+                        status.push_str(&format!(
+                            "; ufw (added={}, deleted={}, kept={})",
+                            u.added, u.deleted, u.kept
+                        ));
+                    }
+                    Ok(_) => {}
+                    Err(e) => {
+                        self.status = format!("ufw apply failed: {e}");
+                        return;
+                    }
+                }
+                self.status = status;
             }
             Err(e) => self.status = format!("apply failed: {e}"),
         }

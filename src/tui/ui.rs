@@ -280,7 +280,7 @@ fn render_help(f: &mut Frame, app: &App, area: Rect) {
         Line::from("  m        toggle masquerade"),
         Line::from("  d        delete selected rule"),
         Line::from("  w        save config"),
-        Line::from("  A        save and apply to the kernel"),
+        Line::from("  A        save and apply nftables/UFW rules"),
         Line::from("  p / P    probe target latency (selected / all)"),
         Line::from("  r        reload from disk"),
         Line::from("  j/k ↑↓   move selection"),
