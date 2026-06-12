@@ -10,7 +10,7 @@ use crate::model::{Config, Mapping, Protocol};
 
 /// Date-based version following Yuki's `YYYYMMDD.N` scheme. Bumped manually per
 /// release. (Cargo's package version stays semver because this form is not.)
-pub const VERSION: &str = "20260607.1";
+pub const VERSION: &str = "20260612.1";
 
 #[derive(Parser)]
 #[command(name = "nporter", version = VERSION, about = "nftables port-forwarding manager")]

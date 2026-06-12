@@ -118,9 +118,9 @@ GitHub Release 并上传：
 版本不一致的 tag。
 
 ```bash
-# 例如：VERSION 必须是 "20260607.1"
-git tag v20260607.1
-git push origin v20260607.1
+# 例如：VERSION 必须是 "20260612.1"
+git tag v20260612.1
+git push origin v20260612.1
 ```
 
 ## 安装

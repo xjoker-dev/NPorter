@@ -130,9 +130,9 @@ increment `N` for additional releases on the same date. The release workflow
 rejects mismatches.
 
 ```bash
-# Example: VERSION must be "20260607.1"
-git tag v20260607.1
-git push origin v20260607.1
+# Example: VERSION must be "20260612.1"
+git tag v20260612.1
+git push origin v20260612.1
 ```
 
 ## Install
