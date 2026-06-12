@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # NPorter one-command remote installer.
 #
-#   curl -fsSL https://raw.githubusercontent.com/xjoker-dev/NPorter/main/get.sh | sudo bash
-#   curl -fsSL https://raw.githubusercontent.com/xjoker-dev/NPorter/main/get.sh | sudo bash -s -- --now
+#   curl -fsSL https://raw.githubusercontent.com/xjoker-dev/NPorter/master/get.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/xjoker-dev/NPorter/master/get.sh | sudo bash -s -- --now
 #
 # All options are forwarded to install.sh unchanged:
 #   --enable       Enable nporter.service at boot.
@@ -33,11 +33,11 @@ trap 'rm -rf "$TMPDIR"' EXIT
 
 echo "Downloading ${TARBALL} ..."
 if command -v curl >/dev/null 2>&1; then
-    curl -fsSL -o "$TMPDIR/$TARBALL"  "${BASE_URL}/${TARBALL}"
-    curl -fsSL -o "$TMPDIR/$CHECKSUM" "${BASE_URL}/${CHECKSUM}"
+    curl -fL --show-error -o "$TMPDIR/$TARBALL"  "${BASE_URL}/${TARBALL}"
+    curl -fL --show-error -o "$TMPDIR/$CHECKSUM" "${BASE_URL}/${CHECKSUM}"
 elif command -v wget >/dev/null 2>&1; then
-    wget -qO "$TMPDIR/$TARBALL"  "${BASE_URL}/${TARBALL}"
-    wget -qO "$TMPDIR/$CHECKSUM" "${BASE_URL}/${CHECKSUM}"
+    wget -O "$TMPDIR/$TARBALL"  "${BASE_URL}/${TARBALL}"
+    wget -O "$TMPDIR/$CHECKSUM" "${BASE_URL}/${CHECKSUM}"
 else
     die "curl or wget is required"
 fi

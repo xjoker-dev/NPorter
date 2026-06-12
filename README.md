@@ -142,13 +142,13 @@ Release binaries are statically linked. Runtime package dependencies are minimal
 **One-command install** (detects amd64 / arm64 automatically):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xjoker-dev/NPorter/main/get.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/xjoker-dev/NPorter/master/get.sh | sudo bash
 ```
 
 To enable and start the service immediately after install:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xjoker-dev/NPorter/main/get.sh | sudo bash -s -- --now
+curl -fsSL https://raw.githubusercontent.com/xjoker-dev/NPorter/master/get.sh | sudo bash -s -- --now
 ```
 
 Alternatively, download the release tarball manually, extract it, and run the
